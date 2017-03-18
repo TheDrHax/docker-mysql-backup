@@ -21,9 +21,9 @@ backup_profile() {
         NAME="$HOST.sql.gz"
     fi
 
-    echo -n "Saving $HOST ($DATABASE) to $NAME... "
-    mysqldump -u$USER $PASS -h$HOST $PORT $MYSQLDUMP_OPTIONS $DATABASE | pigz -cf9 > "$NAME"
-    echo "Done! (exit code: $?)"
+    echo "Saving $HOST ($DATABASE) to $NAME..."
+    time mysqldump -u$USER $PASS -h$HOST $PORT $MYSQLDUMP_OPTIONS $DATABASE | pigz -cf9 > "$NAME"
+    echo -e "Done! (exit code: $?)\n"
 }
 
 for profile in $PROFILES; do
