@@ -1,0 +1,38 @@
+#!/bin/sh
+
+parse_user() {
+    [ "$1" ] && USER="$1" || USER="root"
+    [ "$2" ] && PASS="-p$2" || PASS=""
+}
+
+parse_host() {
+    [ "$1" ] && HOST="$1" || HOST="mysql"
+    [ "$2" ] && PORT="-P$2" || PORT=""
+}
+
+backup_profile() {
+    parse_user $(echo "$1" | sed 's|:| |g')
+    parse_host $(echo "$2" | sed 's|:| |g')
+    if [ "$3" ]; then
+        DATABASE=$3
+        NAME="$HOST-$DATABASE.sql.gz"
+    else
+        DATABASE="--all-databases"
+        NAME="$HOST.sql.gz"
+    fi
+
+    echo -n "Saving $HOST ($DATABASE) to $NAME... "
+    mysqldump -u$USER $PASS -h$HOST $PORT $MYSQLDUMP_OPTIONS $DATABASE | pigz -cf9 > "$NAME"
+    echo "Done! (exit code: $?)"
+}
+
+for profile in $PROFILES; do
+    backup_profile $(echo $profile | sed 's|[@/]| |g')
+done
+
+[ -e $RETENTION_PERIOD ] && rm -r $RETENTION_PERIOD
+for i in $(seq $RETENTION_PERIOD -1 0); do
+    [ -e $i ] && mv $i $((i+1))
+done
+mkdir 0
+mv *.gz 0/
